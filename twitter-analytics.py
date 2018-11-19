@@ -7,20 +7,9 @@ app = Flask(__name__)
 ask = Ask(app, '/')
 #ask.config["ASK_VERIFY_REQUESTS"] = False
 
-heads = {"Accept":"*/*",
-"Accept-Encoding":"gzip, deflate, br",
-"Accept-Language":"de-DE",
-"Connection":"keep-alive",
-"Host":"api.instastatistics.com",
-"If-None-Match":'W/"1cd-rJdOsnBQ7ia+IHJ7evi0TAmWlxI"',
-"Origin":"https://instastatistics.com",
-"Referer":"https://instastatistics.com/",
-"User-Agent":"Mozilla/5.0 (X11; Linux x86_64) Gecko/20100101 Firefox/63.0"
-}
-
 @ask.launch
 def launch():
-    speech_text = "Hallo! Frag einfach 'Wie viele Abonennten hat der Benutzer'"
+    speech_text = "Hallo! Frag einfach 'Wie viele Abonennten hat zum Beispiel potus auf Twitter'"
     return question(speech_text).simple_card('Hallo!', speech_text)
 
 @ask.intent('FollowerIntent')
@@ -29,13 +18,15 @@ def followers(username):
     print(username)
     username = ''.join(username)
     print(username)
-    resp = requests.get("https://api.instastatistics.com/statistics/"+username,headers=heads)
-    if resp.json()["success"] == False:
-        return statement("Ein Fehler ist aufgetreten. Existiert der der Benutzername " + username + " eventuell nicht?").simple_card("Fehler!","Ein Fehler ist aufgetreten. Tut mir Leid!")
-    else:
-        followers = resp.json()["data"]["followers"]
-        speech_text = "Der gewuenschte Benutzername hat {} Abonennten auf Instagram".format(followers)
+    url = "https://bastet.socialblade.com/twitter/lookup?query="+username
+    resp = requests.get(url)
+    print(url)
+    if resp.text == "":
+        speech_text = "Fehler! Existiert der Benutzername eventuell nicht?"
         return statement(speech_text).simple_card("Abonnenten",speech_text)
+    followers = resp.text
+    speech_text = "Der gewuenschte Benutzername hat {} Abonennten auf Twitter".format(followers)
+    return statement(speech_text).simple_card("Abonnenten",speech_text)
 
 @ask.intent('AMAZON.HelpIntent')
 def help():
@@ -57,4 +48,4 @@ def pp():
     return app.send_static_file('privacy.txt')
 
 if __name__ == '__main__':
-    app.run(host="127.0.0.1")
+    app.run(host="127.0.0.1",port=5001)
